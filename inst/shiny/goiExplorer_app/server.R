@@ -21,7 +21,7 @@ app_server <- function(input, output, session) {
         #counts <- read.csv(input$infile$datapath)[[1]]
         goiExplorer::run_pipeline(data_dir,
                                   dataType      = input$dataType,
-                                  ensemblSpecies = input$ensemblSpecies,
+                                  species = input$species,
                                   parent_outdir = withr::local_tempdir()),
         error = function(e) {
           shiny::showNotification(paste("Error:", e$message), type="error")

@@ -30,6 +30,7 @@ Imports:
     KnowSeq
 Suggests:
     shiny,
+    shinyFiles,
     openai,
     testthat,
     knitr,
