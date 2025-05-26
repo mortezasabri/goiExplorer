@@ -87,6 +87,10 @@ pipeline <- function(dds,
 
   
   
+  
+  
+  
+  
   # ensure we have a real output directory
   if (missing(parent_outdir) || is.null(parent_outdir)) {
     parent_outdir <- file.path(tempdir(), paste0("goiExplorer_", Sys.time()))
