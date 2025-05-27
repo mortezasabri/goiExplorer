@@ -59,12 +59,19 @@ app_server <- function(input, output, session) {
         shiny::withProgress(message = "Running analysis…", value = 0, {
             shiny::incProgress(0.2, detail = "Initializing data…")
             shiny::showNotification("Running pipeline…", type = "message")
+            # Parse palette as a character vector
+            palette_vals <- unlist(strsplit(input$palette, ","))
             result <- tryCatch(
                 goiExplorer::run_pipeline(
                   input         = data_dir,
                   dataType      = input$dataType,
                   goi           = input$goi,
-                  parent_outdir = output_dir
+                  parent_outdir = output_dir,
+                  lfcCutoff     = input$lfcCutoff,
+                  pCutoff       = input$pCutoff,
+                  pAdjustMethod = input$pAdjustMethod,
+                  palette       = palette_vals,
+                  rowNamesOfCounts = input$rowNamesOfCounts
                 ),
                 error = function(e) {
                     shiny::showNotification(paste0(

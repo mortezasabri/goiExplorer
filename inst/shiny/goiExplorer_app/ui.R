@@ -38,7 +38,21 @@ app_ui <- shiny::fluidPage(
       ),
       # 4) Run pipeline & show outputs
       shiny::actionButton("run", "Run Pipeline"),
-      shiny::verbatimTextOutput("output_path")
+      shiny::verbatimTextOutput("output_path"),
+      shiny::actionButton("show_advanced", "Show advanced options"),
+      shiny::conditionalPanel(
+        condition = "input.show_advanced % 2 == 1",
+        tags$div(style = "margin-top: 10px; margin-bottom: 10px; border: 1px solid #eee; padding: 10px; background: #fafafa;",
+          shiny::numericInput("lfcCutoff", "logFC cutoff (default is 1)", value = 1, min = 0, step = 0.1),
+          shiny::numericInput("pCutoff", "Adjusted Pvalue (default is 0.05)", value = 0.05, min = 0, max = 1, step = 0.01),
+          shiny::selectInput("pAdjustMethod", "Method for padj (default is fdr)",
+            choices = c("fdr", "holm", "hochberg", "hommel", "bonferroni", "BH", "BY"),
+            selected = "fdr"
+          ),
+          shiny::textInput("palette", "Two Colorhexa codes (default is #4f8832 and #f79c18)", value = "#4f8832,#f79c18"),
+          shiny::textInput("rowNamesOfCounts", "The name of the rows in counts.txt", value = "external_gene_name")
+        )
+      ),
     ),
     shiny::mainPanel(
       shiny::verbatimTextOutput("status"),
