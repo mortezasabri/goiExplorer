@@ -2,7 +2,7 @@
 app_server <- function(input, output, session) {
 
     # set up roots for shinyFiles
-  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), getVolumes()())
+  volumes <- c(Home = fs::path_home(), "R Installation" = R.home(), shinyFiles::getVolumes()())
   shinyFiles::shinyDirChoose(input, "salmon_folder", roots = volumes, session = session)
 
   pipeline_res <- shiny::eventReactive(input$run, {
