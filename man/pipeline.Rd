@@ -72,7 +72,7 @@ Internally this function:
 \dontrun{
 pipeline_counts(
   dds = "inst/extdata",
-  outdir   = "counts_output"
+  outdir = "counts_output"
 )
 }
 }
