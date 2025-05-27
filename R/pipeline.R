@@ -42,6 +42,7 @@
 #' @importFrom rstatix add_xy_position t_test
 #' @importFrom KnowSeq DEGsToDiseases
 #' @importFrom ggpubr ggbarplot ggboxplot stat_pvalue_manual
+#' @importFrom pathview pathview
 #' @export
 pipeline <- function(dds,
                      goi,
@@ -83,6 +84,7 @@ pipeline <- function(dds,
   
   res_output <- list() # saving the directories and results in this as an output of run_pipeline()
   res_output$goi <- goi
+  res_output$ensemblSpecies <- ensemblSpecies
   
 
   
@@ -205,14 +207,14 @@ pipeline <- function(dds,
   stat.test <- rstatix::add_significance(stat.test)
   stat.test.mean <- stat.test %>% add_xy_position(fun = "mean_sd", x = intgroup)
   
-  g <- ggpubr::ggbarplot(df, x = intgroup, y = "count", add = "mean_sd", 
+  g <- ggbarplot(df, x = intgroup, y = "count", add = "mean_sd",
                          fill = intgroup, 
                          palette = palette) + 
-    ggpubr::stat_pvalue_manual(stat.test.mean, label = "padj: {p} {p.signif}", 
+    stat_pvalue_manual(stat.test.mean, label = "padj: {p} {p.signif}",
                                tip.length = 0.01) +
-    ggplot2::labs(title = paste0("Barplot for ", goi), y = "Normalized counts")
+    labs(title = paste0("Barplot for ", goi), y = "Normalized counts")
   p <- paste0(outdir, "barplot_", goi, ".png")
-  ggplot2::ggsave(p,
+  ggsave(p,
                   g,
                   dpi = 300)
   res_output$Barplot <- g
@@ -283,7 +285,9 @@ pipeline <- function(dds,
   p <- base::paste0(outdir, "MAplot_", goi, ".png")
   grDevices::png(p, units = "in", height = 10, width = 14, res = 200)
   DESeq2::plotMA(res, ylim = c(-4,4), main = "MA Plot")
-  graphics::text(df$baseMean, df$log2FoldChange, goi, pos = 2, col = "black", cex = 1) 
+  if (nrow(df) > 0) {
+    graphics::text(df$baseMean, df$log2FoldChange, goi, pos = 2, col = "black", cex = 1) 
+  }
   grDevices::dev.off()
   res_output$plotMApath <- p
   
@@ -291,9 +295,8 @@ pipeline <- function(dds,
   x <- base::data.frame(KnowSeq::DEGsToDiseases(goi, size = 10, getEvidences = TRUE))[, 1:2]
   x[,2] <- base::as.numeric(x[,2])
   x[,2] <- base::round(x[,2], 3)
-  write_txt_xlsx(x, outdir, 
+  write_txt_xlsx(x, outdir,
                  prefix = paste0("DEGsToDiseases_", goi))
-  
   res_output$DEGsToDiseases <- x
   
   
@@ -306,7 +309,8 @@ pipeline <- function(dds,
   
   geneList <- degs$log2FoldChange; names(geneList) <- degs$entrezgene_id
   geneList <- geneList[stats::complete.cases(names(geneList))]
-  
+  geneList <- geneList[order(geneList, decreasing = T)]
+
   z <- limma::getGeneKEGGLinks(abrScientificName)
   path.ids <- z[z$GeneID == entrezgene_id, ]$PathwayID
   
@@ -317,7 +321,7 @@ pipeline <- function(dds,
   for (i in 1:length(path.ids)) {
     tryCatch({
       var2 <- path.ids[i]
-      nm <- paste0(var2, "_", names(var2))
+      nm <- paste0(var2, ": ", names(var2))
       message(paste0("\n *** Initiating loop ", i, "/",length(path.ids), ": ", nm))
       
       geneOnThePathID <- KEGGREST::keggGet(path.ids[i])[[1]]$GENE
@@ -326,7 +330,7 @@ pipeline <- function(dds,
       ceil <- max(abs(geneOnThePathID))
       if (requireNamespace("pathview", quietly = TRUE)) {
         tryCatch({
-          pathview::pathview(
+          pathview(
             gene.data = geneList,
             pathway.id = path.ids[i],
             species = abrScientificName,
