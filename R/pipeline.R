@@ -6,7 +6,7 @@
 #' @param dds a `dds` object from DESeq2 
 #' @param goi a gene of interest
 #' @param parent_outdir Character. Directory where all outputs (tables, plots) will be written.
-#'   If it doesn’t exist, it will be created recursively.
+#' If it does not exist, it will be created recursively.
 #' @param abr_healthy abbreviation for healthy group; for example H for healthy
 #' @param abr_case abbreviation for case group; for example D for disease
 #' @param ensemblSpecies e.g. hsapiens_gene_ensembl. You can get that from biomaRt::listDatasets(biomaRt::useEnsembl("ensembl"))$dataset
@@ -18,14 +18,14 @@
 #' @param pAdjustMethod method to adjusting the pvalues. see ?p.adjust
 #' @param palette palette to fill the plots
 #' @return Files saved in parent_outdir:
-#'   - `res.df`: a `DESeqDataSet` object  
-#'   - `degs`: a `data.frame` of annotated DE results 
+#'   - `res.df`: a `DESeqDataSet` object
+#'   - `degs`: a `data.frame` of annotated DE results
 #'   - plots: boxplot, barplot, Count Plot, Volcano, MA plot, Top10 associated diseases, Pathways, colocalisationsForGene result for the GOI
 #' @details
-#' Internally this function:  
-#' 1. Reads the dds 
-#' 2. runs `DESeq()`  
-#' 3. Annotates and shrinks log‐fold changes with `get_res_df()`  
+#' Internally this function:
+#' 1. Reads the dds
+#' 2. runs `DESeq()`
+#' 3. Annotates and shrinks logfold changes with `get_res_df()`
 #' @examples
 #' \dontrun{
 #' pipeline_counts(
@@ -96,14 +96,12 @@ pipeline <- function(dds,
   outdir <- parent_outdir
   res_output$directory <- outdir
   
-  # inside your function:
+  # Try the *default* Ensembl site first, then fall back to a cached file
   mart_path <- system.file("extdata", "hsa_mart.rds", package = "goiExplorer")
-
-  # Try the *default* Ensembl site first, then fall back to a mirror
   mart <- tryCatch(
     biomaRt::useEnsembl("ensembl", dataset = ensemblSpecies),
     error = function(e_live) {
-      message("Default Ensembl failed, trying US mirror…")
+      message("Default Ensembl failed, trying US mirror")
       warning("Live Ensembl query failed: ", e_live$message,
             "\nFalling back to local cache in extdata.")
       # Fall back to your shipped RDS
@@ -141,7 +139,6 @@ pipeline <- function(dds,
   
   ## ----DESeq2 out
   res.df <- get_res_df(dds, rowNamesOfCounts, mart, pCutoff, pAdjustMethod)
-  
   res$pvalue <- ifelse(is.na(res$pvalue), 1, res$pvalue)
   res$padj <- ifelse(is.na(res$padj), 1, res$padj)
   res.df$pvalue <- ifelse(is.na(res.df$pvalue), 1, res.df$pvalue)
@@ -164,22 +161,22 @@ pipeline <- function(dds,
                                        'chromosome_name', 
                                        'start_position', 'end_position', 'strand')
   des <- tryCatch(
-  biomaRt::getBM(
-    attributes = attributes,
-    filters    = rowNamesOfCounts,
-    values     = goi,
-    mart       = mart
-  ),
-  error = function(e) {
-    warning(
-      "Could not fetch annotation from Ensembl: ", e$message,
-      " — skipping annotation."
-    )
-    # Return an empty data.frame with the right columns
-    base::data.frame(base::matrix(ncol = base::length(attributes), nrow = 0,
-                      dimnames = base::list(NULL, attributes)),
-              stringsAsFactors = FALSE)
-  }
+    biomaRt::getBM(
+      attributes = attributes,
+      filters    = rowNamesOfCounts,
+      values     = goi,
+      mart       = mart
+    ),
+    error = function(e) {
+      warning(
+        "Could not fetch annotation from Ensembl: ", e$message,
+        "  skipping annotation."
+      )
+      # Return an empty data.frame with the right columns
+      base::data.frame(base::matrix(ncol = base::length(attributes), nrow = 0,
+                        dimnames = base::list(NULL, attributes)),
+                stringsAsFactors = FALSE)
+    }
   )
 
   entrezgene_id <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db, 

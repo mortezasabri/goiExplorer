@@ -26,7 +26,7 @@ pipeline(
 \item{goi}{a gene of interest}
 
 \item{parent_outdir}{Character. Directory where all outputs (tables, plots) will be written.
-If it doesn’t exist, it will be created recursively.}
+If it does not exist, it will be created recursively.}
 
 \item{abr_healthy}{abbreviation for healthy group; for example H for healthy}
 
@@ -65,7 +65,7 @@ Internally this function:
 \enumerate{
 \item Reads the dds
 \item runs \code{DESeq()}
-\item Annotates and shrinks log‐fold changes with \code{get_res_df()}
+\item Annotates and shrinks logfold changes with \code{get_res_df()}
 }
 }
 \examples{
