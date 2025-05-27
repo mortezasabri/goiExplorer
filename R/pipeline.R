@@ -35,7 +35,7 @@
 #' }
 #' @importFrom DESeq2 resultsNames DESeq results counts plotMA
 #' @importFrom biomaRt getBM
-#' @importFrom ggplot2 ggplot ggsave aes labs scale_y_continuous rel
+#' @importFrom ggplot2 ggplot ggsave aes labs scale_y_continuous rel geom_point
 #' @importFrom magrittr %>%
 #' @importFrom ggbeeswarm geom_beeswarm
 #' @importFrom ggrepel geom_text_repel
@@ -330,12 +330,12 @@ pipeline <- function(dds,
   df$significant <- ifelse(sig_cutoff, "yes", "no")
 
   # 2. Build the MA‐plot
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = baseMean, y = log2FoldChange)) +
+  g <- ggplot2::ggplot(df, ggplot2::aes(x = baseMean, y = log2FoldChange)) +
     # log‐scale the x axis
     ggplot2::scale_x_log10() +
 
     # all points
-    ggplot2::geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
+    geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
 
     # highlight significant genes in a distinct color
     ggplot2::scale_color_manual(
