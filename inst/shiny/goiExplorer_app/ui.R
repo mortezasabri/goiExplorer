@@ -1,5 +1,3 @@
-
-
 app_ui <- shiny::fluidPage(
   shiny::titlePanel("GOI Explorer"),
   shiny::sidebarLayout(
@@ -29,11 +27,18 @@ app_ui <- shiny::fluidPage(
         ),
         fileInput("id_file", "Upload ID.txt", accept = ".txt")
       ),
-      
-      # 3) Species and run
-      shiny::textInput("species", "Species (e.g. hsapiens_gene_ensembl)"),
-      shiny::actionButton("run", "Run Pipeline")
 
+      # 3a) Gene of interest
+      shiny::textInput("goi", "Gene of interest", value = ""),
+      # 3b) Mandatory output directory chooser
+      shinyFiles::shinyDirButton(
+        "save_dir",
+        "Choose output directory",
+        "Select a directory"
+      ),
+      # 4) Run pipeline & show outputs
+      shiny::actionButton("run", "Run Pipeline"),
+      shiny::verbatimTextOutput("output_path")
     ),
     shiny::mainPanel(
       shiny::verbatimTextOutput("status"),

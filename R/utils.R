@@ -102,4 +102,3 @@ get_res_df <- function(dds,
   rownames(res.df) <- res.df[,1]
   return(res.df)
 }
-

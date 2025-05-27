@@ -89,15 +89,17 @@ pipeline <- function(dds,
 
 
 
-
-
   # ensure we have a real output directory
   if (missing(parent_outdir) || is.null(parent_outdir)) {
     parent_outdir <- file.path(tempdir(), paste0("goiExplorer_", Sys.time()))
   }
   if (!dir.exists(parent_outdir)) dir.create(parent_outdir, recursive = TRUE)
-  outdir <- parent_outdir
-  res_output$directory <- outdir
+
+  # Ensure trailing slash (use .Platform$file.sep for cross-platform)
+  if (substr(parent_outdir, nchar(parent_outdir), nchar(parent_outdir)) != .Platform$file.sep) {
+    parent_outdir <- paste0(parent_outdir, .Platform$file.sep)
+  }
+  res_output$directory <- outdir <- parent_outdir
 
   # Try the *default* Ensembl site first, then fall back to a cached file
   mart_path <- system.file("extdata", "hsa_mart.rds", package = "goiExplorer")
