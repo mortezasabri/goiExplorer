@@ -29,7 +29,7 @@ app_ui <- shiny::fluidPage(
       ),
 
       # 3a) Gene of interest
-      shiny::textInput("goi", "Gene of interest", value = ""),
+      shiny::textInput("goi", "Gene of interest (e.g. CYLD)", value = ""),
       # 3b) Mandatory output directory chooser
       shinyFiles::shinyDirButton(
         "save_dir",
@@ -42,15 +42,26 @@ app_ui <- shiny::fluidPage(
     ),
     shiny::mainPanel(
       shiny::verbatimTextOutput("status"),
-      shiny::tableOutput("results_table"),
-      shiny::plotOutput("go_plot"),
-      shiny::textInput("ai_query", "Ask the AI agent"),
-      shiny::actionButton("ai_ask", "Send to AI"),
-      verbatimTextOutput("ai_answer"),
-      shiny::conditionalPanel(
-        "input.run > 0",
-        shiny::downloadButton("dl", "Download results")
-      )
+      tags$div(
+        style = "font-size: 1.2em; font-weight: bold; margin-bottom: 10px; color: #2c3e50;",
+        shiny::verbatimTextOutput("output_path")
+      ),
+      shiny::tabsetPanel(
+        id = "plot_tabs",
+        tabPanel("Barplot",   shiny::plotOutput("barplot")),
+        tabPanel("Boxplot",   shiny::plotOutput("boxplot")),
+        tabPanel("Countplot", shiny::plotOutput("countplot")),
+        tabPanel("MA Plot",   shiny::plotOutput("ma_plot")),
+        tabPanel("Volcano",   shiny::plotOutput("volcano_plot")),
+        tabPanel(
+          "Differentially Expressed Genes",
+          DT::dataTableOutput("degs_table")
+        )
+      ),
+      shiny::tableOutput("goi_des"),
+      shiny::verbatimTextOutput("goi_entrez"),
+      shiny::tableOutput("goi_test"),
+      shiny::tableOutput("results_table")
     )
   )
 )

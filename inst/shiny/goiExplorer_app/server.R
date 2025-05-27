@@ -59,7 +59,6 @@ app_server <- function(input, output, session) {
         shiny::withProgress(message = "Running analysis…", value = 0, {
             shiny::incProgress(0.2, detail = "Initializing data…")
             shiny::showNotification("Running pipeline…", type = "message")
-            output$status <- shiny::renderText("Running pipeline…")
             result <- tryCatch(
                 goiExplorer::run_pipeline(
                   input         = data_dir,
@@ -90,13 +89,13 @@ app_server <- function(input, output, session) {
     })
 
     output$status <- renderText({
-        if (!isTruthy(input$run)) {
-            "Waiting for you to click Run…"
-        } else if (is.null(pipeline_res())) {
-            "Pipeline failed or still running…"
-        } else {
-            "Pipeline complete!"
-        }
+      if (!isTruthy(input$run)) {
+        "Waiting for you to click Run…"
+      } else if (is.null(pipeline_res())) {
+        "Pipeline failed or still running…"
+      } else {
+        "Pipeline complete!"
+      }
     })
   
     output$results_table <- shiny::renderTable({
@@ -104,9 +103,35 @@ app_server <- function(input, output, session) {
         pipeline_res()$terms
     })
   
-    output$go_plot <- renderPlot({
+    output$go_plot <- shiny::renderPlot({
         shiny::req(pipeline_res())
         pipeline_res()$plot
+    })
+  
+    output$barplot <- renderPlot({
+      shiny::req(pipeline_res())
+      pipeline_res()$Barplot
+    })
+    
+    output$boxplot <- renderPlot({
+      shiny::req(pipeline_res())
+      pipeline_res()$Boxplot
+    })
+    
+    output$countplot <- renderPlot({
+      shiny::req(pipeline_res())
+      pipeline_res()$Countplot
+    })
+    
+    output$ma_plot <- renderPlot({
+      shiny::req(pipeline_res())
+      pipeline_res()$plotMA
+    })
+  
+    output$volcano_plot <- renderPlot({
+        shiny::req(pipeline_res())
+        shiny::req(pipeline_res()$Volcanoplot)
+        pipeline_res()$Volcanoplot
     })
   
     # Removed the observeEvent for opening the output folder
@@ -114,9 +139,64 @@ app_server <- function(input, output, session) {
     # AI query reactive
     ai_response <- shiny::eventReactive(input$ai_ask, {
         req(nzchar(input$ai_query))
+        if (nzchar(input$openai_api_key)) {
+            Sys.setenv(OPENAI_API_KEY = input$openai_api_key)
+        }
         goiExplorer::ai_agent(input$ai_query)
     })
 
     # Render AI answer
     output$ai_answer <- shiny::renderText({ ai_response() })
+    
+    output$goi_des <- shiny::renderTable({
+      shiny::req(pipeline_res())
+      des <- pipeline_res()$des
+      if (is.null(des) || nrow(des) == 0) return(NULL)
+      des
+    })
+
+    output$goi_entrez <- shiny::renderText({
+      shiny::req(pipeline_res())
+      entrez <- pipeline_res()$entrezgene_id
+      if (is.null(entrez) || is.na(entrez)) return("No Entrez ID found.")
+      paste("Entrez Gene ID:", entrez)
+    })
+
+    output$goi_test <- shiny::renderTable({
+      shiny::req(pipeline_res())
+      test <- pipeline_res()$test
+      if (is.null(test) || nrow(test) == 0) return(NULL)
+      test
+    })
+    
+    output$degs_table <- DT::renderDataTable({
+      shiny::req(pipeline_res())
+      degs <- pipeline_res()$degs
+      if (is.null(degs) || nrow(degs) == 0) return(NULL)
+      
+      sci_cols <- c("lfcSE", "pvalue", "padj")
+      skip_cols <- c("entrezgene_id", "start_position", "end_position", "strand")
+      
+      for (col in names(degs)) {
+        if (is.numeric(degs[[col]]) && !(col %in% skip_cols)) {
+          if (col %in% sci_cols) {
+            degs[[col]] <- formatC(degs[[col]], format = "e", digits = 3)
+          } else {
+            degs[[col]] <- round(degs[[col]], 1)
+          }
+        }
+      }
+      
+      DT::datatable(
+        degs,
+        options = list(
+          pageLength = 10,
+          lengthMenu = c(5, 10, 25, 50),
+          searchHighlight = TRUE,
+          scrollX = TRUE   # Enable horizontal scrolling
+        ),
+        filter = "top",
+        rownames = FALSE
+      )
+    })
 }

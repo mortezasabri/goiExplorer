@@ -167,9 +167,7 @@ pipeline <- function(dds,
   attributes <- c(
     rowNamesOfCounts, "external_gene_name",
     "ensembl_gene_id",
-    "gene_biotype", "description",
-    "chromosome_name",
-    "start_position", "end_position", "strand"
+    "gene_biotype", "description"
   )
   des <- tryCatch(
     biomaRt::getBM(
@@ -193,18 +191,22 @@ pipeline <- function(dds,
       )
     }
   )
+  if (rowNamesOfCounts == "external_gene_name") {
+    des <- des[, -2]
+  }
+  res_output$des <- des
 
   entrezgene_id <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db,
     keys = goi,
     keytype = "SYMBOL", column = "ENTREZID"
   )
+  res_output$entrezgene_id <- entrezgene_id
 
   link <- unique(paste0(
     "https://useast.ensembl.org/",
     sub(" ", "_", ScientificName),
     "/Gene/Summary?g=", des$ensembl_gene_id
   ))
-  res_output$desGOI <- des
 
 
   df <- geneCounts <-
@@ -355,7 +357,7 @@ pipeline <- function(dds,
     ggrepel::geom_text_repel(
       data = base::subset(df, base::rownames(df) %in% goi),
       ggplot2::aes(label = goi),
-      size = 3,
+      size = 6,
       max.overlaps = 10,
       box.padding = 0.3,
       segment.size = 0.2
@@ -378,8 +380,8 @@ pipeline <- function(dds,
     width = 6,
     height = 5
   )
-  res_output$plotMApath <- p
-
+  res_output$plotMA <- g
+  res_output$test <- base::subset(df[, c("log2FoldChange", "padj", "significant")], base::rownames(df) %in% goi)
   ## ----DEGsToDiseases
   x <- base::data.frame(KnowSeq::DEGsToDiseases(goi, size = 10, getEvidences = TRUE))[, 1:2]
   x[, 2] <- base::as.numeric(x[, 2])
