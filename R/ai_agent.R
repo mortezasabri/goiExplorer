@@ -22,3 +22,4 @@ ai_agent <- function(prompt, model = "gpt-4") {
     )$choices[[1]]$message$content
   }, error = function(e) paste("AI request failed:", e$message))
 }
+
