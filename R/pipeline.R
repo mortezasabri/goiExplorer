@@ -279,22 +279,12 @@ pipeline <- function(dds,
   res_output$VolcanoplotPath <- p
   
   ## ----MA plot
-  df <- as.data.frame(res)
-  # if baseMean got lost (e.g. by lfcShrink), recompute from the dds object:
-  if (!"baseMean" %in% colnames(df)) {
-    df$baseMean <- rowMeans(DESeq2::counts(dds, normalized = TRUE))
-  }
-  g <- DESeq2::plotMA(res, ylim = c(-4,4), main = "MA Plot")
-  p <- paste0(outdir, "MAplot_", goi, ".png")
-  grDevices::png(p, 
-                 units = "in", height = 10, width = 14, res = 200)
+  df <- base::subset(base::as.data.frame(res), base::rownames(df) %in% goi)
+  p <- base::paste0(outdir, "MAplot_", goi, ".png")
+  grDevices::png(p, units = "in", height = 10, width = 14, res = 200)
   DESeq2::plotMA(res, ylim = c(-4,4), main = "MA Plot")
-  base::with(subset(res, base::rownames(res) %in% goi), {
-    graphics::text(df$baseMean, df$log2FoldChange, goi, pos = 2, col = "black", cex = 1) 
-  })
+  graphics::text(df$baseMean, df$log2FoldChange, goi, pos = 2, col = "black", cex = 1) 
   grDevices::dev.off()
-  
-  res_output$plotMA <- g
   res_output$plotMApath <- p
   
   ## ----DEGsToDiseases
