@@ -96,15 +96,20 @@ pipeline <- function(dds,
   outdir <- parent_outdir
   res_output$directory <- outdir
   
-  
-  mart <- biomaRt::useEnsembl(biomart="ensembl", dataset = ensemblSpecies)
-  biotypes <- biomaRt::getBM(attributes=c(rowNamesOfCounts, 
-                                          "external_gene_name", 
-                                          'gene_biotype'), 
-                             filters = rowNamesOfCounts, 
-                             values = rownames(dds), 
-                             mart = mart)
-  res_output$ddsBiotypes <- biotypes
+  # inside your function:
+  mart_path <- system.file("extdata", "hsa_mart.rds", package = "goiExplorer")
+
+  # Try the *default* Ensembl site first, then fall back to a mirror
+  mart <- tryCatch(
+    biomaRt::useEnsembl("ensembl", dataset = ensemblSpecies),
+    error = function(e_live) {
+      message("Default Ensembl failed, trying US mirror…")
+      warning("Live Ensembl query failed: ", e_live$message,
+            "\nFalling back to local cache in extdata.")
+      # Fall back to your shipped RDS
+      base::readRDS(mart_path)
+    }
+  )
   
   ## ----DESeq2
   # The condition of interest should go at the end
@@ -153,14 +158,30 @@ pipeline <- function(dds,
   res_output$res.df <- res.df
   
   ## ----abstract
-  des <- biomaRt::getBM(attributes = c(rowNamesOfCounts, "external_gene_name",
+  attributes <- c(rowNamesOfCounts, "external_gene_name",
                                        'ensembl_gene_id', 
                                        'gene_biotype', "description", 
                                        'chromosome_name', 
-                                       'start_position', 'end_position', 'strand'), 
-                        filters = rowNamesOfCounts, 
-                        values = goi, 
-                        mart = mart)
+                                       'start_position', 'end_position', 'strand')
+  des <- tryCatch(
+  biomaRt::getBM(
+    attributes = attributes,
+    filters    = rowNamesOfCounts,
+    values     = goi,
+    mart       = mart
+  ),
+  error = function(e) {
+    warning(
+      "Could not fetch annotation from Ensembl: ", e$message,
+      " — skipping annotation."
+    )
+    # Return an empty data.frame with the right columns
+    base::data.frame(base::matrix(ncol = base::length(attributes), nrow = 0,
+                      dimnames = base::list(NULL, attributes)),
+              stringsAsFactors = FALSE)
+  }
+  )
+
   entrezgene_id <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db, 
                                          keys = goi, 
                                          keytype = "SYMBOL", column="ENTREZID")

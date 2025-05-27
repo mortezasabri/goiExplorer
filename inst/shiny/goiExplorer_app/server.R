@@ -39,17 +39,26 @@ app_server <- function(input, output, session) {
     shiny::withProgress(message="Running analysis…", value=0, {
       shiny::showNotification("Running pipeline…", type = "message")
       output$status <- shiny::renderText("Running pipeline…")
-      res <- tryCatch(
+      result <- tryCatch(
         goiExplorer::run_pipeline(data_dir,
                                   dataType = input$dataType,
-                                  species = input$species,
+                                  ensemblSpecies = input$species,
                                   parent_outdir = tempfile("goi_out_")),
         error = function(e) {
-          shiny::showNotification(paste("Error:", e$message), type="error")
+          shiny::showNotification(paste0(
+            "Failed to query Ensembl: ", e$message,
+            ".\nTry again later or set a different mirror, e.g.:\n",
+            "biomaRt::useMart(host='www.ensembl.org', "
+            , "biomart='ENSEMBL_MART_ENSEMBL', dataset=input$species)"
+          ), type="error", duration = NULL)
           return(NULL)
         }
       )
     })
+    if (!is.null(result)) {
+      showNotification("Pipeline complete!", type = "message")
+    }
+    result
   })
   output$status <- renderText({
     if (!isTruthy(input$run)) {
