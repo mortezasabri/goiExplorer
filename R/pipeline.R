@@ -287,7 +287,7 @@ pipeline <- function(dds,
   )
   res_output$Countplot <- g
   res_output$CountplotPath <- p
-  
+
   ## ----Volcano
   res.df$threshold <- res.df$padj < pCutoff & abs(res.df$log2FoldChange) > lfcCutoff
   res.df$genelabels <- base::rownames(res.df) %in% goi # name of genes want to display
@@ -322,58 +322,59 @@ pipeline <- function(dds,
   res_output$VolcanoplotPath <- p
 
   ## ----MA plot
-# df is your results table, with at least:
-#   baseMean, log2FoldChange, padj, genelabels
-df <- as.data.frame(res)
-# 1. Define significance
-sig_cutoff <- df$padj < pCutoff & abs(df$log2FoldChange) > lfcCutoff
-df$significant <- ifelse(sig_cutoff, "yes", "no")
+  # df is your results table, with at least:
+  #   baseMean, log2FoldChange, padj, genelabels
+  df <- as.data.frame(res)
+  # 1. Define significance
+  sig_cutoff <- df$padj < pCutoff & abs(df$log2FoldChange) > lfcCutoff
+  df$significant <- ifelse(sig_cutoff, "yes", "no")
 
-# 2. Build the MA‐plot
-p <- ggplot2::ggplot(df, ggplot2::aes(x = baseMean, y = log2FoldChange)) +
-  # log‐scale the x axis
-  ggplot2::scale_x_log10() +
-  
-  # all points
-  ggplot2::geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
-  
-  # highlight significant genes in a distinct color
-  ggplot2::scale_color_manual(
-    values = c(no  = "gray60", 
-               yes = "red"  # or palette[["sig"]]
-    ),
-    guide  = ggplot2::guide_legend(title = "Significant")
-  ) +
-  
-  # optional horizontal line at LFC = 0
-  ggplot2::geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.4) +
-  
-  # annotate only the top N genes (or all significant ones)
-  ggrepel::geom_text_repel(
-    data = base::subset(df, base::rownames(df) %in% goi),
-    ggplot2::aes(label = goi),
-    size       = 3,
-    max.overlaps = 10,
-    box.padding   = 0.3,
-    segment.size  = 0.2
-  ) +
-  
-  ggplot2::labs(
-    x    = "Mean of normalized counts (log10)",
-    y    = "log2 Fold Change",
-    title = base::paste("MA plot for", goi)
-  ) +
-  
-  ggplot2::theme_minimal(base_size = 12) +
-  ggplot2::theme(
-    legend.position = "bottom",
-    plot.title      = ggplot2::element_text(face = "bold", hjust = 0.5)
-  )
+  # 2. Build the MA‐plot
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = baseMean, y = log2FoldChange)) +
+    # log‐scale the x axis
+    ggplot2::scale_x_log10() +
+
+    # all points
+    ggplot2::geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
+
+    # highlight significant genes in a distinct color
+    ggplot2::scale_color_manual(
+      values = c(
+        no = "gray60",
+        yes = "red" # or palette[["sig"]]
+      ),
+      guide = ggplot2::guide_legend(title = "Significant")
+    ) +
+
+    # optional horizontal line at LFC = 0
+    ggplot2::geom_hline(yintercept = 0, linetype = "dashed", linewidth = 0.4) +
+
+    # annotate only the top N genes (or all significant ones)
+    ggrepel::geom_text_repel(
+      data = base::subset(df, base::rownames(df) %in% goi),
+      ggplot2::aes(label = goi),
+      size = 3,
+      max.overlaps = 10,
+      box.padding = 0.3,
+      segment.size = 0.2
+    ) +
+    ggplot2::labs(
+      x = "Mean of normalized counts (log10)",
+      y = "log2 Fold Change",
+      title = base::paste("MA plot for", goi)
+    ) +
+    ggplot2::theme_minimal(base_size = 12) +
+    ggplot2::theme(
+      legend.position = "bottom",
+      plot.title      = ggplot2::element_text(face = "bold", hjust = 0.5)
+    )
   # Save the plot
   p <- base::paste0(outdir, "MAplot_", goi, ".png")
   ggplot2::ggsave(p,
     plot = g,
-    dpi = 300
+    dpi = 300,
+    width = 6,
+    height = 5
   )
   res_output$plotMApath <- p
 
