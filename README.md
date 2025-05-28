@@ -1,7 +1,7 @@
 # goiExplorer
 Exploring a gene of interest
 
-An R package for exploring Genes Of Interest (GOIs) via differential‐expression pipelines, pathway analysis, and a Shiny interface with an AI agent.
+An R package for exploring Genes Of Interest (GOIs) via differential‐expression pipelines, pathway analysis, and a Shiny interface.
 
 ## Installation
 
@@ -25,6 +25,7 @@ head(res_output$counts)
 p <- res_output$Volcanoplot  # volcano plot
 p
 ```
+
 Other plots:
 - Barplot
 - Boxplot

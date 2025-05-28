@@ -339,7 +339,7 @@ pipeline <- function(dds,
     ggplot2::scale_x_log10() +
 
     # all points
-    geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
+    geom_point(ggplot2::aes(color = df$significant), alpha = 0.5, size = 0.5) +
 
     # highlight significant genes in a distinct color
     ggplot2::scale_color_manual(
