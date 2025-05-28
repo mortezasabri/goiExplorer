@@ -10,7 +10,15 @@ An R package for exploring Genes Of Interest (GOIs) via differential‐expressio
 devtools::install_github("mortezasabri/goiExplorer")
 ```
 
-## Quickstart
+## Shiny App (User-friendly)
+
+```r
+goiExplorer::run_app()
+```
+
+## Running on R console 
+
+with more freedom to change the all arguments
 
 ```r
 library(goiExplorer)
@@ -32,11 +40,7 @@ Other plots:
 - Countplot
 - plotMA
 
-## Shiny App
 
-```r
-goiExplorer::run_app()
-```
 
 ## Contributing
 
