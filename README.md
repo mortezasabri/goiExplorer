@@ -18,7 +18,7 @@ goiExplorer::run_app()
 
 ## Running on R console 
 
-with more freedom to change the all arguments
+With more freedom to change the arguments
 
 ```r
 library(goiExplorer)
