@@ -1,7 +1,7 @@
 # goiExplorer
 Exploring a gene of interest
 
-An R package for exploring Genes Of Interest (GOIs) via differential‐expression pipelines, pathway analysis, and a Shiny interface.
+An R package for exploring Genes Of Interest (GOIs) via differential‐expression pipelines, pathway analysis, and a Shiny interface. See the tutorial on [YouTube](https://youtu.be/pq5Wg64rjAU)
 
 ## Installation
 
