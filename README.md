@@ -7,7 +7,7 @@ An R package for exploring Genes Of Interest (GOIs) via differential‐expressio
 
 ```r
 # from GitHub
-# devtools::install_github("mortezasabri/goiExplorer")
+devtools::install_github("mortezasabri/goiExplorer")
 ```
 
 ## Quickstart
@@ -22,8 +22,14 @@ res_output <- run_pipeline(
   parent_outdir = "path/to/output"
 )
 head(res_output$counts)
-res_output$Volcanoplot  # volcano plot
+p <- res_output$Volcanoplot  # volcano plot
+p
 ```
+Other plots:
+- Barplot
+- Boxplot
+- Countplot
+- plotMA
 
 ## Shiny App
 
