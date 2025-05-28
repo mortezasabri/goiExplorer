@@ -7,7 +7,6 @@
 run_pipeline(
   input,
   dataType,
-  project,
   goi = "CYLD",
   parent_outdir,
   abr_healthy = "H",
@@ -33,8 +32,6 @@ run_pipeline(
 
 \item{dataType}{Character, one of \code{"counts"} or \code{"salmon"} indicating
 which underlying pipeline to use.}
-
-\item{project}{A name as a character for the experiment.}
 
 \item{goi}{a gene of interest}
 
@@ -88,7 +85,6 @@ meta <- data.frame(
 run_pipeline(
   input     = system.file("extdata", package = "goiExplorer"),
   dataType  = "counts",
-  project   = "cardio",
   parent_outdir    = "counts_output/"
 )
 }

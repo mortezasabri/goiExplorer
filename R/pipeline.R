@@ -61,6 +61,7 @@ pipeline <- function(dds,
   options(width = 100, timeout = 600)
   stopifnot(inherits(dds, "DESeqDataSet"))
   stopifnot(inherits(goi, "character"))
+  goi <- toupper(goi) # ensure uppercase
   stopifnot(inherits(parent_outdir, "character"))
   stopifnot(inherits(abr_healthy, "character"))
   stopifnot(inherits(abr_case, "character"))
@@ -166,7 +167,7 @@ pipeline <- function(dds,
   ## ----abstract
   attributes <- c(
     rowNamesOfCounts, "external_gene_name",
-    "ensembl_gene_id",
+    "ensembl_gene_id", "entrezgene_id",
     "gene_biotype", "description"
   )
   des <- tryCatch(
@@ -195,18 +196,6 @@ pipeline <- function(dds,
     des <- des[, -2]
   }
   res_output$des <- des
-
-  entrezgene_id <- AnnotationDbi::mapIds(org.Hs.eg.db::org.Hs.eg.db,
-    keys = goi,
-    keytype = "SYMBOL", column = "ENTREZID"
-  )
-  res_output$entrezgene_id <- entrezgene_id
-
-  link <- unique(paste0(
-    "https://useast.ensembl.org/",
-    sub(" ", "_", ScientificName),
-    "/Gene/Summary?g=", des$ensembl_gene_id
-  ))
 
 
   df <- geneCounts <-
@@ -339,7 +328,7 @@ pipeline <- function(dds,
     ggplot2::scale_x_log10() +
 
     # all points
-    geom_point(ggplot2::aes(color = df$significant), alpha = 0.5, size = 0.5) +
+    geom_point(ggplot2::aes(color = significant), alpha = 0.5, size = 0.5) +
 
     # highlight significant genes in a distinct color
     ggplot2::scale_color_manual(
@@ -357,7 +346,7 @@ pipeline <- function(dds,
     ggrepel::geom_text_repel(
       data = base::subset(df, base::rownames(df) %in% goi),
       ggplot2::aes(label = goi),
-      size = 6,
+      size = 4,
       max.overlaps = 10,
       box.padding = 0.3,
       segment.size = 0.2
@@ -402,15 +391,15 @@ pipeline <- function(dds,
   geneList <- degs$log2FoldChange
   names(geneList) <- degs$entrezgene_id
   geneList <- geneList[stats::complete.cases(names(geneList))]
-  geneList <- geneList[order(geneList, decreasing = T)]
+  # geneList <- geneList[order(geneList, decreasing = T)]
 
   z <- limma::getGeneKEGGLinks(abrScientificName)
-  path.ids <- z[z$GeneID == entrezgene_id, ]$PathwayID
+  path.ids <- z[z$GeneID %in% des$entrezgene_id, ]$PathwayID
 
   for (i in 1:length(path.ids)) {
     names(path.ids)[i] <- KEGGREST::keggGet(path.ids[i])[[1]]$PATHWAY
   }
-
+  utils::data("bods", package = "pathview", envir = environment())
   for (i in 1:length(path.ids)) {
     tryCatch(
       {
@@ -423,7 +412,6 @@ pipeline <- function(dds,
         geneOnThePathID <- geneList[which(names(geneList) %in% geneOnThePathID)]
         ceil <- base::round(max(abs(geneOnThePathID)), 1)
         if (requireNamespace("pathview", quietly = TRUE)) {
-          utils::data("bods", package = "pathview", envir = environment())
           tryCatch(
             {
               pathview(

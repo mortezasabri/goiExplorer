@@ -3,7 +3,7 @@ utils::globalVariables(c(
   "count", "threshold", "genelabels", "baseMean",
   "abrScientificName", "excludedSample", "txi", "rel"
 ))
-
+if (getRversion() >= "2.15.1") utils::globalVariables("significant")
 
 #' Launch the GOI Explorer Shiny app
 #' @export

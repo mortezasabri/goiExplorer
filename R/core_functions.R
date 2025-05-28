@@ -8,7 +8,6 @@
 #'   - for `"salmon"`: `ID.txt`, `ID.txt`, `gr.txt`, plus any Salmon `quant.sf` dirs
 #' @param dataType Character, one of `"counts"` or `"salmon"` indicating
 #'   which underlying pipeline to use.
-#' @param project A name as a character for the experiment.
 #' @param goi a gene of interest
 #' @param parent_outdir    Character. Directory where all outputs (tables, plots) will be written.
 #'   If it doesn’t exist, it will be created recursively.
@@ -39,14 +38,12 @@
 #' run_pipeline(
 #'   input     = system.file("extdata", package = "goiExplorer"),
 #'   dataType  = "counts",
-#'   project   = "cardio",
 #'   parent_outdir    = "counts_output/"
 #' )
 #' }
 #' @export
 run_pipeline <- function(input, 
                          dataType, 
-                         project, 
                          goi = "CYLD",
                          parent_outdir,
                          abr_healthy = "H",
@@ -59,10 +56,12 @@ run_pipeline <- function(input,
                          lfcCutoff = 1,
                          pCutoff = 0.05,
                          pAdjustMethod = "fdr", 
-                         palette = c("#4f8832", "#f79c18"), 
+                         palette = c("#4f8832", "#f79c18"),
                          tx2gene = NA) {
+  lfcCutoff <- as.numeric(lfcCutoff)
+  pCutoff <- as.numeric(pCutoff)
   if (!exists("parent_outdir")) {
-    parent_outdir <- file.path(tempdir(check = T), project)
+    parent_outdir <- file.path(tempdir(check = T), "goiExplorer_output")
   }
   if(!dir.exists(parent_outdir)) dir.create(parent_outdir, recursive = TRUE)
   
@@ -70,12 +69,8 @@ run_pipeline <- function(input,
     stop("Please define the input directory")
   }
   
-  if (!exists("dataType")) {
-    stop("Please define the type of the data")
-  }
-  
-  if (!exists("project")) {
-    stop("Please define the name of the project")
+  if (!dataType %in% c("counts", "salmon")) {
+    stop("dataType must be either 'counts' or 'salmon'")
   }
   
   

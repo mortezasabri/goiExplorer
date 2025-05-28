@@ -24,8 +24,6 @@ Imports:
     ggplot2,
     ggpubr,
     otargen,
-    AnnotationDbi,
-    org.Hs.eg.db,
     rstatix,
     limma,
     KEGGREST,

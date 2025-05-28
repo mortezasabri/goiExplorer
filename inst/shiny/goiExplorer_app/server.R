@@ -164,7 +164,7 @@ app_server <- function(input, output, session) {
 
     output$goi_entrez <- shiny::renderText({
       shiny::req(pipeline_res())
-      entrez <- pipeline_res()$entrezgene_id
+      entrez <- pipeline_res()$des$entrezgene_id
       if (is.null(entrez) || is.na(entrez)) return("No Entrez ID found.")
       paste("Entrez Gene ID:", entrez)
     })
