@@ -2,18 +2,74 @@
 % Please edit documentation in R/ai_agent.R
 \name{ai_agent}
 \alias{ai_agent}
-\title{Chat with your GOI Explorer results}
+\title{Ask a question about your GOI Explorer results}
 \usage{
-ai_agent(prompt, model = "gpt-4")
+ai_agent(
+  prompt,
+  res_output = NULL,
+  history = NULL,
+  provider = NULL,
+  model = NULL,
+  api_key = NULL,
+  max_tokens = 1024,
+  temperature = 0
+)
 }
 \arguments{
-\item{prompt}{A natural language question about your last pipeline run.}
+\item{prompt}{Character. Your question.}
 
-\item{model}{OpenAI model to use.}
+\item{res_output}{Optional. The list returned by \code{\link[=run_pipeline]{run_pipeline()}}; when given,
+its summary is prepended as context.}
+
+\item{history}{Optional list of previous turns, each a list with \code{role}
+(\code{"user"} or \code{"assistant"}) and \code{content}. Lets you hold a conversation.}
+
+\item{provider}{\code{"anthropic"} or \code{"openai"}. Defaults to whichever key is set.}
+
+\item{model}{Character. Model name; defaults to a sensible model per provider.}
+
+\item{api_key}{Character. Overrides the environment variable.}
+
+\item{max_tokens}{Integer. Maximum length of the reply.}
+
+\item{temperature}{Numeric. Sampling temperature; 0 keeps answers reproducible.}
 }
 \value{
-A character response.
+A character string: the model's answer, or a message starting with
+\code{"AI request failed:"} when the call could not be made.
 }
 \description{
-Chat with your GOI Explorer results
+Sends your question, plus a text summary of the run (see \code{\link[=summarise_run]{summarise_run()}}),
+to a large language model and returns the answer. The model can therefore
+talk about \emph{your} numbers instead of guessing: "is my gene one of the
+strongest changes?", "what do the top down-regulated genes have in common?",
+"how should I phrase this for a figure legend?".
+}
+\details{
+Two providers are supported. The default is Anthropic (Claude) when
+\code{ANTHROPIC_API_KEY} is set, otherwise OpenAI when \code{OPENAI_API_KEY} is set.
+
+Only the summary text is transmitted - the count matrix and the raw results
+table never leave your machine. Treat the answer as a reading aid, not as a
+result: verify anything you plan to publish against the tables the pipeline
+wrote to disk.
+}
+\examples{
+\dontrun{
+Sys.setenv(ANTHROPIC_API_KEY = "sk-ant-...")
+res <- run_pipeline(input = "counts_dir", dataType = "counts", goi = "TP53")
+
+ai_agent("Is TP53 among the strongest changes here, or just significant?", res)
+
+# multi-turn
+q1 <- "Summarise the result in three sentences."
+a1 <- ai_agent(q1, res)
+ai_agent("Now rewrite that for a general audience.",
+  res,
+  history = list(
+    list(role = "user", content = q1),
+    list(role = "assistant", content = a1)
+  )
+)
+}
 }

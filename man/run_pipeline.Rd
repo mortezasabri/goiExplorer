@@ -20,7 +20,9 @@ run_pipeline(
   pCutoff = 0.05,
   pAdjustMethod = "fdr",
   palette = c("#4f8832", "#f79c18"),
-  tx2gene = NA
+  tx2gene = NA,
+  extra_plots = TRUE,
+  report = TRUE
 )
 }
 \arguments{
@@ -62,6 +64,12 @@ If it doesn’t exist, it will be created recursively.}
 
 \item{tx2gene}{Path to an \code{.rds} file or data.frame mapping transcripts -> genes.
 a directory also will be created, icluding all outputs.}
+
+\item{extra_plots}{Logical. Also build the QC / exploration plots
+(PCA, sample distances, heatmap, dispersion, ...). See \code{\link[=build_extra_plots]{build_extra_plots()}}.}
+
+\item{report}{Logical. Write a self-contained HTML report into
+\code{parent_outdir}. See \code{\link[=write_report]{write_report()}}.}
 }
 \value{
 A \code{list} with elements:

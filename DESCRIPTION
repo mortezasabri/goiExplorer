@@ -1,7 +1,7 @@
 Package: goiExplorer
-Title: What the Package Does (One Line, Title Case)
-Version: 0.1.0
-Authors@R: 
+Title: Explore a Gene of Interest in RNA-Seq Data
+Version: 0.2.0
+Authors@R:
   person(
     given = "Morteza",
     family = "Sabri",
@@ -9,7 +9,14 @@ Authors@R:
     role = c("aut", "cre"),
     comment = c("Bioinformatician", "Research software engineer")
   )
-Description: What the package does (one paragraph).
+Description: An end-to-end workflow for putting one gene of interest in the
+    context of a whole RNA-Seq experiment. Reads either a plain count table or
+    Salmon quantifications, runs differential expression with 'DESeq2',
+    annotates the results with 'biomaRt', and produces the figures, quality
+    control plots, disease and pathway annotations and a self-contained HTML
+    report for that gene. A 'shiny' interface exposes the same workflow
+    without writing code, and an optional large-language-model assistant
+    answers questions about a finished run.
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -18,6 +25,8 @@ Config/testthat/edition: 3
 Imports:
     tximport,
     DESeq2,
+    SummarizedExperiment,
+    S4Vectors,
     writexl,
     biomaRt,
     magrittr,
@@ -31,11 +40,17 @@ Imports:
     filesstrings,
     ggbeeswarm,
     ggrepel,
-    KnowSeq
+    KnowSeq,
+    grDevices,
+    stats,
+    utils
 Suggests:
     shiny,
     shinyFiles,
-    openai,
+    DT,
+    fs,
+    httr,
+    jsonlite,
     testthat,
     knitr,
     withr

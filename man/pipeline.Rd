@@ -17,7 +17,9 @@ pipeline(
   lfcCutoff,
   pCutoff,
   pAdjustMethod,
-  palette
+  palette,
+  extra_plots = TRUE,
+  report = TRUE
 )
 }
 \arguments{
@@ -47,6 +49,12 @@ If it does not exist, it will be created recursively.}
 \item{pAdjustMethod}{method to adjusting the pvalues. see ?p.adjust}
 
 \item{palette}{palette to fill the plots}
+
+\item{extra_plots}{Logical. Also build the QC / exploration plots
+(PCA, sample distances, DEG heatmap, dispersion, ...). See \code{\link[=build_extra_plots]{build_extra_plots()}}.}
+
+\item{report}{Logical. Write a self-contained HTML report into
+\code{parent_outdir}. See \code{\link[=write_report]{write_report()}}.}
 }
 \value{
 Files saved in parent_outdir:

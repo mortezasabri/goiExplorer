@@ -17,6 +17,10 @@
 #' @param pCutoff cutoff on adj pvalue
 #' @param pAdjustMethod method to adjusting the pvalues. see ?p.adjust
 #' @param palette palette to fill the plots
+#' @param extra_plots Logical. Also build the QC / exploration plots
+#'   (PCA, sample distances, DEG heatmap, dispersion, ...). See [build_extra_plots()].
+#' @param report Logical. Write a self-contained HTML report into
+#'   `parent_outdir`. See [write_report()].
 #' @return Files saved in parent_outdir:
 #'   - `res.df`: a `DESeqDataSet` object
 #'   - `degs`: a `data.frame` of annotated DE results
@@ -57,7 +61,9 @@ pipeline <- function(dds,
                      lfcCutoff,
                      pCutoff,
                      pAdjustMethod,
-                     palette) {
+                     palette,
+                     extra_plots = TRUE,
+                     report = TRUE) {
   options(width = 100, timeout = 600)
   stopifnot(inherits(dds, "DESeqDataSet"))
   stopifnot(inherits(goi, "character"))
@@ -138,6 +144,9 @@ pipeline <- function(dds,
   message("Summary of differentially expressed genes: ")
   summary(res <- DESeq2::results(dds, alpha = pCutoff, pAdjustMethod = pAdjustMethod))
   res_output$res <- res
+  # keep the untouched p-values: the NA -> 1 substitution below would otherwise
+  # put an artificial spike at 1 in the p-value histogram
+  res_output$pvalue_raw <- res$pvalue
 
 
   # ----------- Normalization
@@ -370,22 +379,95 @@ pipeline <- function(dds,
     height = 5
   )
   res_output$plotMA <- g
+  res_output$plotMAPath <- p
   res_output$test <- base::subset(df[, c("log2FoldChange", "padj", "significant")], base::rownames(df) %in% goi)
   ## ----DEGsToDiseases
-  x <- base::data.frame(KnowSeq::DEGsToDiseases(goi, size = 10, getEvidences = TRUE))[, 1:2]
-  x[, 2] <- base::as.numeric(x[, 2])
-  x[, 2] <- base::round(x[, 2], 3)
-  write_txt_xlsx(x, outdir,
-    prefix = paste0("DEGsToDiseases_", goi)
+  # Everything from here on needs the network. A remote service being down
+  # should cost you that one section, not the whole run, so each block is
+  # wrapped and only warns on failure.
+  x <- base::tryCatch(
+    {
+      y <- base::data.frame(KnowSeq::DEGsToDiseases(goi, size = 10, getEvidences = TRUE))[, 1:2]
+      y[, 2] <- base::as.numeric(y[, 2])
+      y[, 2] <- base::round(y[, 2], 3)
+      write_txt_xlsx(y, outdir,
+        prefix = paste0("DEGsToDiseases_", goi)
+      )
+      y
+    },
+    error = function(e) {
+      warning("Could not fetch disease associations: ", e$message)
+      NULL
+    }
   )
   res_output$DEGsToDiseases <- x
 
 
+  ## ----Extra QC and exploration plots
+  if (base::isTRUE(extra_plots)) {
+    message("Building exploratory plots:")
+    res_output <- base::tryCatch(
+      build_extra_plots(res_output,
+        outdir = outdir,
+        lfcCutoff = lfcCutoff,
+        pCutoff = pCutoff,
+        palette = palette
+      ),
+      error = function(e) {
+        warning("Could not build the exploratory plots: ", e$message)
+        res_output
+      }
+    )
+  }
+
 
   ## ----Pathways
+  kegg_paths <- base::tryCatch(
+    .run_kegg(degs, des, abrScientificName, outdir),
+    error = function(e) {
+      warning("KEGG pathway step failed: ", e$message)
+      base::character(0)
+    }
+  )
+  res_output$KEGGpaths <- kegg_paths
+
+  x <- base::tryCatch(
+    .run_colocalisations(goi, interestedTerms, outdir),
+    error = function(e) {
+      warning("Open Targets colocalisation step failed: ", e$message)
+      NULL
+    }
+  )
+  if (!base::is.null(x) && base::nrow(x) > 0) {
+    res_output$colocalisationsForGene <- x
+    base::tryCatch(
+      .plot_manhattans(x, goi, outdir),
+      error = function(e) warning("Could not draw the Manhattan plots: ", e$message)
+    )
+  }
+
+  ## ----HTML report
+  if (base::isTRUE(report)) {
+    res_output$reportPath <- base::tryCatch(
+      write_report(res_output),
+      error = function(e) {
+        warning("Could not write the HTML report: ", e$message)
+        NULL
+      }
+    )
+  }
+
+  return(res_output)
+}
+
+
+# KEGG pathway rendering. Runs in `outdir/KEGG`; always restores the working
+# directory, whatever pathview does. Returns the paths of the images written.
+.run_kegg <- function(degs, des, abrScientificName, outdir) {
   outKEGG <- paste0(outdir, "KEGG/")
   if (!dir.exists(outKEGG)) dir.create(outKEGG, recursive = TRUE)
   tmp <- getwd()
+  on.exit(setwd(tmp), add = TRUE)
   setwd(outKEGG)
 
   geneList <- degs$log2FoldChange
@@ -445,11 +527,12 @@ pipeline <- function(dds,
     "paths"
   ) # hsa for human
   setwd(tmp)
-  l <- list.files(file.path(outKEGG, "paths"), full.names = T)
-  res_output$KEGGpaths <- l
+  list.files(file.path(outKEGG, "paths"), full.names = T)
+}
 
 
-
+# Traits colocalising with the GOI, via Open Targets Genetics.
+.run_colocalisations <- function(goi, interestedTerms, outdir) {
   x <- otargen::colocalisationsForGene(goi)
   x <- as.data.frame(x)
   if (nrow(x) > 0) {
@@ -468,32 +551,26 @@ pipeline <- function(dds,
         prefix = paste0("colocalisationsForGene_", goi)
       )
     }
-    res_output$colocalisationsForGene <- x
   }
+  x
+}
 
 
-
-
-  if (length(x$Study) == 1) {
-    grDevices::png(paste0(outdir, "manhattan1_", goi, ".png"),
-      units = "in", height = 10, width = 14, res = 200
-    )
-    otargen::plot_manhattan(otargen::manhattan(x$Study[1]))
-    grDevices::dev.off()
-  } else if (length(x$Study) == 2) {
-    grDevices::png(paste0(outdir, "manhattan1_", goi, ".png"),
-      units = "in", height = 10, width = 14, res = 200
-    )
-    otargen::plot_manhattan(otargen::manhattan(x$Study[1]))
-    grDevices::dev.off()
-
-    grDevices::png(paste0(outdir, "manhattan2_", goi, ".png"),
-      units = "in", height = 10, width = 14, res = 200
-    )
-    otargen::plot_manhattan(otargen::manhattan(x$Study[2]))
-    grDevices::dev.off()
+# One Manhattan plot per colocalising study (at most two).
+.plot_manhattans <- function(x, goi, outdir) {
+  studies <- x$Study
+  if (base::is.null(studies) || base::length(studies) == 0) {
+    return(base::invisible(NULL))
   }
-
-
-  return(res_output)
+  for (i in base::seq_len(base::min(2, base::length(studies)))) {
+    grDevices::png(paste0(outdir, "manhattan", i, "_", goi, ".png"),
+      units = "in", height = 10, width = 14, res = 200
+    )
+    base::tryCatch(
+      otargen::plot_manhattan(otargen::manhattan(studies[i])),
+      error = function(e) warning("Manhattan plot ", i, " failed: ", e$message),
+      finally = grDevices::dev.off()
+    )
+  }
+  base::invisible(NULL)
 }

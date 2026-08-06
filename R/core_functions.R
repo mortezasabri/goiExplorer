@@ -24,6 +24,10 @@
 #' @param palette palette to fill the plots
 #' @param tx2gene   Path to an `.rds` file or data.frame mapping transcripts -> genes.
 #'   a directory also will be created, icluding all outputs.
+#' @param extra_plots Logical. Also build the QC / exploration plots
+#'   (PCA, sample distances, heatmap, dispersion, ...). See [build_extra_plots()].
+#' @param report Logical. Write a self-contained HTML report into
+#'   `parent_outdir`. See [write_report()].
 #' @return A `list` with elements:
 #'   - `dds`: the `DESeqDataSet` object  
 #'   - `results`: a `data.frame` of annotated DE results  
@@ -57,7 +61,9 @@ run_pipeline <- function(input,
                          pCutoff = 0.05,
                          pAdjustMethod = "fdr", 
                          palette = c("#4f8832", "#f79c18"),
-                         tx2gene = NA) {
+                         tx2gene = NA,
+                         extra_plots = TRUE,
+                         report = TRUE) {
   lfcCutoff <- as.numeric(lfcCutoff)
   pCutoff <- as.numeric(pCutoff)
   if (!exists("parent_outdir")) {
@@ -91,9 +97,9 @@ run_pipeline <- function(input,
                   abr_case)
   }
   
-  res_output <- pipeline(dds, 
+  res_output <- pipeline(dds,
                          goi,
-                         parent_outdir, 
+                         parent_outdir,
                          abr_healthy,
                          abr_case,
                          ensemblSpecies,
@@ -103,8 +109,10 @@ run_pipeline <- function(input,
                          lfcCutoff,
                          pCutoff,
                          pAdjustMethod,
-                         palette)
+                         palette,
+                         extra_plots = extra_plots,
+                         report = report)
+  message("Outputs have been saved in: ", parent_outdir)
   return(res_output)
-  message("Outputs are being saved in: ", parent_outdir)
 }
 
