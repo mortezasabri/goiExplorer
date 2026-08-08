@@ -20,6 +20,23 @@ devtools::install_github("mortezasabri/goiExplorer")
 goiExplorer::run_app()
 ```
 
+Pick your input, name a gene, choose an output folder, press Run. The results
+arrive as headline numbers (genes tested, significant, up, down, and the gene's
+own fold change and adjusted p-value) above five groups of tabs:
+
+- **Gene of interest** — boxplot, barplot, countplot, fold-change rank,
+  co-expression, disease associations, plus the annotation and test tables
+- **Differential expression** — volcano plots, MA plot, heatmap, and a
+  searchable, filterable table of the significant genes
+- **Quality control** — PCA, sample distances, library sizes, p-value
+  histogram, dispersion estimates
+- **Ask AI** — put questions about the run to Claude or OpenAI in plain English
+- **Run summary** — the whole run condensed to a page of text
+
+Buttons in the sidebar download the whole output folder as a `.zip` or just the
+HTML report. Advanced options cover the cutoffs, the p-adjustment method, the
+palette, and switches for the QC plots and the report.
+
 ## Running on R console 
 
 With more freedom to change the arguments
@@ -40,16 +57,17 @@ p
 
 ## Plots
 
-Each plot is also a standalone function, so you can redraw any of them from a
-finished run without re-running the analysis.
+Every run returns its figures in `res_output` and writes them to the output
+directory as PNGs. The newer ones are also standalone functions, so you can
+redraw them from a finished run without repeating the analysis.
 
 **About the gene of interest**
 
 | Slot | Function | What it shows |
 | --- | --- | --- |
-| `Barplot` | | group means ± SD with the adjusted p-value |
-| `Boxplot` | | per-group distribution with every sample drawn |
-| `Countplot` | | normalised counts per sample, log scale |
+| `Barplot` | — | group means ± SD with the adjusted p-value |
+| `Boxplot` | — | per-group distribution with every sample drawn |
+| `Countplot` | — | normalised counts per sample, log scale |
 | `RankPlot` | `plot_goi_rank()` | where the GOI sits among all genes by fold change, with its rank and percentile |
 | `CorrelatedGenesPlot` | `plot_top_correlated()` | the genes whose expression tracks the GOI across samples |
 | `DiseasePlot` | `plot_disease_associations()` | associated diseases and their scores |
@@ -58,11 +76,11 @@ finished run without re-running the analysis.
 
 | Slot | Function | What it shows |
 | --- | --- | --- |
-| `Volcanoplot` | | volcano plot highlighting the GOI |
+| `Volcanoplot` | — | volcano plot highlighting the GOI |
 | `VolcanoLabelled` | `plot_volcano_top()` | volcano plot naming the strongest genes, with up/down counts |
-| `plotMA` | | MA plot |
+| `plotMA` | — | MA plot |
 | `DEGHeatmap` | `plot_deg_heatmap()` | top DE genes as row z-scores, clustered, GOI outlined |
-| `KEGGpaths` | | KEGG pathway diagrams containing the GOI |
+| `KEGGpaths` | — | KEGG pathway diagrams containing the GOI |
 
 **Quality control** — worth a look before trusting any of the above
 
@@ -83,6 +101,11 @@ plot_top_correlated(res_output, n = 40)
 # or rebuild the whole set with different settings
 res_output <- build_extra_plots(res_output, n_heatmap = 60, pCutoff = 0.01)
 ```
+
+Pass `extra_plots = FALSE` to `run_pipeline()` to skip the quality-control set.
+A figure that cannot be drawn — a gene missing from the matrix, a service that
+did not answer — warns and is skipped, so it never takes the rest of the run
+with it.
 
 ## HTML report
 
@@ -113,10 +136,16 @@ ai_interpret(res_output)                       # a ready-made "explain this run"
 cat(summarise_run(res_output))                 # exactly what gets sent as context
 ```
 
-The same thing is available in the app under the **Ask AI** tab. Only the
-summary is transmitted — the count matrix and the results table stay on your
-machine. Treat the answers as a reading aid and verify anything you plan to
-publish against the tables the pipeline wrote to disk.
+The same thing is available in the app under the **Ask AI** tab, which also
+keeps the conversation going across follow-up questions.
+
+Only the summary is transmitted — the count matrix and the results table stay
+on your machine. Treat the answers as a reading aid and verify anything you plan
+to publish against the tables the pipeline wrote to disk.
+
+This is the one optional part of the package: it needs `httr` and `jsonlite`
+(`install.packages(c("httr", "jsonlite"))`) and an API key. Everything else
+works without them.
 
 ## Contributing
 
